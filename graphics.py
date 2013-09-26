@@ -24,7 +24,7 @@ class Sheet:
         if not self.read16() == 1:
             self.error("Number of color planes must be 1.")
         self.colordepth = self.read16()
-        if self.colordepth not in 8,24:
+        if self.colordepth not in (8,24):
             self.error("Unsupported color depth (must be 8 or 24).")
         self.rowsize = ((self.colordepth*self.width+31) // 32)*4
         if not self.read32() == 0:
