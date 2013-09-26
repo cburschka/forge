@@ -57,16 +57,18 @@ def flooravg(image):
         R,G,B = R+r,G+g,B+b          
     return R//768, G//768, B//768
 
-def bmp(f, data):
-    rowsize = (24*len(data[0])+31)//32 * 4
-    datasize = rowsize*len(data)
+def bmp(f, data, scale=1):
+    width = scale*len(data[0])
+    height = scale*len(data)
+    rowsize = (24*width+31)//32 * 4
+    datasize = rowsize*height
     f.write(b'BM')
     f.write(lint32a(datasize+54))
     f.write(bytes([0]*4))
     f.write(lint32a(54))
     f.write(lint32a(40))
-    f.write(lint32a(len(data[0])))
-    f.write(lint32a(len(data)))
+    f.write(lint32a(width))
+    f.write(lint32a(height))
     f.write(lint16a(1))
     f.write(lint16a(24))
     f.write(lint32a(0))
@@ -75,15 +77,16 @@ def bmp(f, data):
     f.write(lint32a(2850))
     f.write(lint32a(0))
     f.write(lint32a(0))
-    pad = bytes([0]*(rowsize - 3*len(data[0])))
+    pad = bytes([0]*(rowsize - 3*width*scale))
     
     for row in data[::-1]:
-        for cell in row:
-            f.write(bytes(cell))
-        f.write(pad)
+        for i in range(scale):
+            for cell in row:
+                f.write(bytes(cell*scale))
+            f.write(pad)
     f.close()
 
-def main(scenario_filename, out_name):
+def main(scenario_filename, out_name, scale):
     SCEN_DIR = os.path.dirname(scenario_filename)
     SCEN_NAME = os.path.basename(scenario_filename)[:-4]
     SCEN_SCRIPT = SCEN_DIR + '/' + SCEN_NAME + 'data.txt'
@@ -106,6 +109,6 @@ def main(scenario_filename, out_name):
                             db[floors[cell][0]] = graphics.Sheet(db[floors[cell][0]])
                         floors[cell] = flooravg(graphics.Cell(db[floors[cell][0]], floors[cell][1]).read())
                     bitmap[i*48+k][j*48+l] = floors[cell]
-    bmp(open(out_name, 'wb'), bitmap)
+    bmp(open(out_name, 'wb'), bitmap, scale)
 
-main(sys.argv[1], sys.argv[2])
+main(sys.argv[1], sys.argv[2], int(sys.argv[3]))
