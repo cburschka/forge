@@ -1,4 +1,4 @@
-import sheet
+import graphics
 import bas
 import os
 import sys
@@ -103,8 +103,8 @@ def main(scenario_filename, out_name):
                         floors[cell] = (0,0,0)
                     if type(floors[cell]) is list:
                         if type(db[floors[cell][0]]) is str:
-                            db[floors[cell][0]] = sheet.Sheet(db[floors[cell][0]])
-                        floors[cell] = flooravg(sheet.Cell(db[floors[cell][0]], floors[cell][1]).read())
+                            db[floors[cell][0]] = graphics.Sheet(db[floors[cell][0]])
+                        floors[cell] = flooravg(graphics.Cell(db[floors[cell][0]], floors[cell][1]).read())
                     bitmap[i*48+k][j*48+l] = floors[cell]
     bmp(open(out_name, 'wb'), bitmap)
 
