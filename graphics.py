@@ -24,6 +24,8 @@ class Sheet:
         if not self.read16() == 1:
             self.error("Number of color planes must be 1.")
         self.colordepth = self.read16()
+        if self.colordepth not in 8,24:
+            self.error("Unsupported color depth (must be 8 or 24).")
         self.rowsize = ((self.colordepth*self.width+31) // 32)*4
         if not self.read32() == 0:
             self.error("Picture must not be compressed.")
@@ -32,7 +34,7 @@ class Sheet:
             self.error("Not using full color table.")
         self.file.seek(0x36)
         
-        if self.colordepth < 16:
+        if self.colordepth == 8:
             self.colors = []
             for i in range(256):
                 self.colors.append(tuple(self.file.read(4)[:3]))
@@ -40,10 +42,11 @@ class Sheet:
     # pixel value: x,y coordinate
     def __get__(self, c):
         if self.colordepth == 8:
-            self.file.seek(self.offset + self.width*c[0] + c[1])
+            self.file.seek(self.offset + self.rowsize*c[0] + c[1])
             return self.colors[self.file.read(1)[0]]
         else:
-            pass
+            self.file.seek(self.offset + self.rowsize*c[0] + c[1]*3)
+            return tuple(self.file.read(3))
         
     # rectangle
     def getrect(self, x, y, width, height):
@@ -51,14 +54,14 @@ class Sheet:
         if self.colordepth == 8:
             for i in range(y,y+height):
                 self.file.seek(self.offset + self.rowsize*i + x)
-                #out.append(list(self.file.read(width)))
                 out.append([self.colors[c] for c in self.file.read(width)])
-            return out
         else:
-            pass
-#            for i in range(y,y+height):
-#                self.file.seek(self.offset + self.rowsize*i + x*self.colordepth//8)
-#                row = self.file.read((width*colordepth+7
+            for i in range(y,y+height):
+                self.file.seek(self.offset + self.rowsize*i + x*3)
+                c = self.file.read(width*3)
+                out.append([(c[i],c[i+1],c[i+2]) for i in range(0,c,3)])
+        return out
+ 
 class Cell:
     def __init__(self, sheet, index):
         self.sheet = sheet
