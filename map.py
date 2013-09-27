@@ -1,5 +1,5 @@
 import graphics
-import avernumscript
+import resource
 import bas
 import sys
 
@@ -70,7 +70,7 @@ def isomap(data, scenario):
 
 
 def main(maptype, scenario_filename, out_name, scale):
-    data = avernumscript.ScenarioData(scenario_filename)
+    data = resource.ScenarioData(scenario_filename)
     scenario = bas.Scenario(scenario_filename)
     graphics.Bitmap(maptype(data, scenario)).write(open(out_name, 'wb'), scale)
 
