@@ -1,5 +1,4 @@
 import re
-import graphics
 
 '''Parse AvernumScript'''
 class ScriptFile:

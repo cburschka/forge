@@ -1,7 +1,7 @@
 import avernumscript
-import graphics
 import os
 import re
+import pygame
 
 DATA_DIR = "/home/christoph/.wine/drive_c/Program Files/Blades of Avernum/Data"
 
@@ -15,7 +15,7 @@ class ScenarioData:
         self.data.readFile(DATA_DIR + '/corescendata.txt')
         self.data.readFile(DATA_DIR + '/corescendata2.txt')
         self.data.readFile(self.scen_dir + '/' + self.scen_name + 'data.txt')
-        self.sheet = {}
+        self.sheets = {}
         self.img = {}
         
     def _find_sheets(self, paths):
@@ -28,17 +28,23 @@ class ScenarioData:
                     if m:
                         self.sheet_path[int(m.group(1))] = path + '/' + filename
 
-    def open_sheet(self, n):
-        if n not in self.sheet:
-            self.sheet[n] = graphics.Sheet(self.sheet_path[n])
-        return self.sheet[n]
-
     def __getitem__(self, key):
         return self.data[key]
+
+    def load_sheet(self, n):
+        if n in self.sheet_path:
+            if n not in self.sheets:
+                self.sheets[n] = pygame.image.load(self.sheet_path[n])
+                self.sheets[n].set_colorkey((255, 255, 255)) # white is transparent
+            return self.sheets[n]
+
         
-    def get_image(self, sheet, icon):
-        if sheet not in self.img:
-            self.img[sheet] = {}
-        if icon not in self.img[sheet]:
-            self.img[sheet][icon] = graphics.Cell(self.open_sheet(sheet), icon).read()
-        return self.img[sheet][icon]
+    def find_icon(self, sheet, icon):
+        # xy position on the grid: rows of ten
+        x,y = icon % 10, icon // 10
+        # xy bottom-left pixel: note the 1px black borders between.
+        rect = (1 + x*47, 1 + y*56, 46, 55)
+        if rect[0]+46 > self.sheets[sheet].get_width() or rect[1]+55 > self.sheets[sheet].get_height():
+            raise IndexError("Sheet {0} is too small to contain icon #{1}".format(sheet, icon))
+        return rect
+
