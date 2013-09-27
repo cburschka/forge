@@ -1,7 +1,6 @@
 import resource
 import bas
 import pygame
-import sys
 
 def isomap(data, scenario):
     iso_size = sum(scenario.outdoor_size)*48
@@ -77,4 +76,4 @@ def map_view(map_surface):
             elif event.type == pygame.MOUSEBUTTONUP:
                 motion = False
 
-map_view(map_create(sys.argv[1]))
+

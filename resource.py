@@ -3,7 +3,8 @@ import os
 import re
 import pygame
 
-DATA_DIR = "/home/christoph/.wine/drive_c/Program Files/Blades of Avernum/Data"
+CNF_FILE = os.environ['HOME'] + '/.forge/forge.ini'
+DATA_DIR = open(CNF_FILE).read()[6:] + '/Data'
 
 class ScenarioData:
     def __init__(self, filename):
