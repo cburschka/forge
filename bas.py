@@ -40,4 +40,7 @@ class OutdoorSection:
         self.scenario.file.seek(self.offset + 0x1214)
         data = list(self.scenario.file.read(48 * 48 * 2))
         return [[(data[96*j+2*i]<<8)|data[96*j+2*i+1] for j in range(48)] for i in range(48)]
-
+    
+    def is_on_surface(self):
+        self.scenario.file.seek(self.offset + 0x3246)
+        return self.scenario.read16()

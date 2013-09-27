@@ -36,7 +36,7 @@ class Sheet:
         if self.colordepth == 8:
             self.colors = []
             for i in range(self.colortable):
-                self.colors.append(tuple(self.file.read(4)[:3]))
+                self.colors.append(self.file.read(4)[:3])
 
     # pixel value: x,y coordinate
     def __get__(self, c):
@@ -45,7 +45,7 @@ class Sheet:
             return self.colors[self.file.read(1)[0]]
         else:
             self.file.seek(self.offset + self.rowsize*c[0] + c[1]*3)
-            return tuple(self.file.read(3))
+            return self.file.read(3)
         
     # rectangle
     def getrect(self, x, y, width, height):
@@ -58,7 +58,7 @@ class Sheet:
             for i in range(y,y+height):
                 self.file.seek(self.offset + self.rowsize*i + x*3)
                 c = self.file.read(width*3)
-                out.append([(c[i],c[i+1],c[i+2]) for i in range(0,len(c),3)])
+                out.append([c[i:i+3] for i in range(0,len(c),3)])
         return out[::-1]
  
 class Cell:
@@ -98,12 +98,14 @@ class Bitmap:
         io.write(lint32a(0))
         io.write(lint32a(0))
         pad = bytes([0]*(rowsize - 3*self.width*scale))
-    
-        for row in self.data[::-1]:
-            for i in range(scale):
-                for cell in row:
-                    io.write(bytes(cell))
-                io.write(pad)
+
+        tenth = self.height // 10    
+        for i in range(len(self.data)-1,-1,-1):
+            if i%tenth == 0:
+                print("Writing row {0} of {1}".format(self.height-i,self.height))
+            for cell in self.data[i]:
+                io.write(cell)
+            io.write(pad)
         io.close()
 
 
