@@ -1,114 +1,51 @@
 import graphics
+import avernumscript
 import bas
-import os
 import sys
-import re
-from binmagic import lint16a, lint32a
 
-DATA_DIR = "/home/christoph/.wine/drive_c/Program Files/Blades of Avernum/Data"
-RE_BEGINFLOOR = re.compile('begindefinefloor\s+([0-9]+)\s*;')
-RE_FLOORSHEET = re.compile('fl_which_sheet\s*=\s*([0-9]+)\s*;')
-RE_FLOORICON = re.compile('fl_which_icon\s*=\s*([0-9]+)\s*;')
-
-def sheet_db(paths):
-    DB = {}
-    RE_SHEETNAME = re.compile('G([0-9]+)\.BMP')
-    for path in paths:
-        for path,dirs,files in os.walk(path):
-            for filename in files:
-                m = RE_SHEETNAME.match(filename.upper())
-                if m:
-                    DB[int(m.group(1))] = path + '/' + filename
-#    print(sorted(DB.keys()))
-    return DB
-                
-def readfloors(scripts):
-    floors = {}
-    for filename in scripts:
-        data = open(filename).read().splitlines()
-        floor, floorsheet, flooricon = 0,0,0
-        for line in data:
-            m = [RE_BEGINFLOOR.search(line), RE_FLOORSHEET.search(line), RE_FLOORICON.search(line)]
-            if m[0]:
-                floor = int(m[0].group(1))
-                floors[floor] = [floorsheet, flooricon]
-            elif m[1]:
-                floors[floor][0] = floorsheet = int(m[1].group(1))
-            elif m[2]:
-                floors[floor][1] = flooricon = int(m[2].group(1))
-    #print(sorted(floors.keys()))
-    return floors
-       
-def lozenge():
-    width = 23
-    for y in range(0,16):
-        for x in range(width):
-            yield (x,y)
-            yield (x,-1-y)
-            yield (-1-x,y)
-            yield (-1-x,-1-y)
-        width -= 1 + (y % 2)
-        
-def flooravg(image):
-    R,G,B = 0,0,0
-    for x,y in lozenge():
-        x,y = x+23,y+16
-        r,g,b = image[y][x]
-        R,G,B = R+r,G+g,B+b          
-    return R//768, G//768, B//768
-
-def bmp(f, data, scale=1):
-    width = scale*len(data[0])
-    height = scale*len(data)
-    rowsize = (24*width+31)//32 * 4
-    datasize = rowsize*height
-    f.write(b'BM')
-    f.write(lint32a(datasize+54))
-    f.write(bytes([0]*4))
-    f.write(lint32a(54))
-    f.write(lint32a(40))
-    f.write(lint32a(width))
-    f.write(lint32a(height))
-    f.write(lint16a(1))
-    f.write(lint16a(24))
-    f.write(lint32a(0))
-    f.write(lint32a(datasize))
-    f.write(lint32a(2850))
-    f.write(lint32a(2850))
-    f.write(lint32a(0))
-    f.write(lint32a(0))
-    pad = bytes([0]*(rowsize - 3*width*scale))
-    
-    for row in data[::-1]:
-        for i in range(scale):
-            for cell in row:
-                f.write(bytes(cell*scale))
-            f.write(pad)
-    f.close()
-
-def main(scenario_filename, out_name, scale):
-    SCEN_DIR = os.path.dirname(scenario_filename)
-    SCEN_NAME = os.path.basename(scenario_filename)[:-4]
-    SCEN_SCRIPT = SCEN_DIR + '/' + SCEN_NAME + 'data.txt'
-    db = sheet_db([DATA_DIR, SCEN_DIR])
-    floors = readfloors([DATA_DIR + '/corescendata.txt', SCEN_SCRIPT])
-    scenario = bas.Scenario(scenario_filename)
+def pixelmap(data, scenario):
     bitmap = [[0]*(scenario.outdoor_size[0]*48) for i in range(scenario.outdoor_size[1]*48)]
+    floor_colors = {}
     for i in range(scenario.outdoor_size[1]):
         for j in range(scenario.outdoor_size[0]):
             section = scenario.get_outdoor_section(j,i)
-#            print(section.name)
             floor_data = section.get_floor_data()
             for k,line in enumerate(floor_data):
                 for l,cell in enumerate(line):
-                    if cell not in floors:
-#                        print("Warning, empty floor",cell)
-                        floors[cell] = (0,0,0)
-                    if type(floors[cell]) is list:
-                        if type(db[floors[cell][0]]) is str:
-                            db[floors[cell][0]] = graphics.Sheet(db[floors[cell][0]])
-                        floors[cell] = flooravg(graphics.Cell(db[floors[cell][0]], floors[cell][1]).read())
-                    bitmap[i*48+k][j*48+l] = floors[cell]
-    bmp(open(out_name, 'wb'), bitmap, scale)
+                    if cell not in floor_colors:
+                        floor_colors[cell] = graphics.flooravg(data.get_floor_image(cell))
+                    bitmap[i*48+k][j*48+l] = floor_colors[cell]
+    return bitmap
 
-main(sys.argv[1], sys.argv[2], int(sys.argv[3]))
+def isomap(data, scenario):
+    iso_size = sum(scenario.outdoor_size)*48
+    bitmap = [[(0,0,0)]*(iso_size*23+23) for i in range(iso_size*16+39)]
+    mmx, nnx, mmy, nny = 0,0,0,0
+    cx, cy = 48*scenario.outdoor_size[1]-1,0
+    for i in range(scenario.outdoor_size[1]):
+        for j in range(scenario.outdoor_size[0]):
+            section = scenario.get_outdoor_section(j,i)
+            floor_data = section.get_floor_data()
+            height_data = section.get_height_data()
+            terrain_data = section.get_terrain_data()
+            for k,(fl_line,te_line,y_line) in enumerate(zip(floor_data, terrain_data, height_data)):
+                for l,(fl_cell,te_cell,y_cell) in enumerate(zip(fl_line,te_line,y_line)):
+                    floor = data.get_floor_image(fl_cell)
+                    terrain = data.get_terrain_image(te_cell)
+                    px,py = cx+((j-i)*48+(l-k)), cy+((i+j)*48+(l+k))
+                    for y in range(55):
+                        for x in range(46):
+                            if terrain and terrain[y][x] != (0xff,0xff,0xff):
+                                bitmap[16*py+y-(y_cell-9)*23][23*px+x] = terrain[y][x]
+                            elif floor and floor[y][x] != (0xff,0xff,0xff):
+                                bitmap[16*py+y-(y_cell-9)*23][23*px+x] = floor[y][x]
+    return bitmap
+
+
+def main(maptype, scenario_filename, out_name, scale):
+    data = avernumscript.ScenarioData(scenario_filename)
+    scenario = bas.Scenario(scenario_filename)
+    graphics.Bitmap(maptype(data, scenario)).write(open(out_name, 'wb'), scale)
+
+
+main(isomap, sys.argv[1], sys.argv[2], int(sys.argv[3]))

@@ -1,5 +1,5 @@
 import sys
-from binmagic import lint32, lint16
+from binmagic import lint32, lint16, lint32a, lint16a
     
 class Sheet:
     def error(self, msg):
@@ -30,13 +30,12 @@ class Sheet:
         if not self.read32() == 0:
             self.error("Picture must not be compressed.")
         self.file.seek(0x2e)
-        if not self.read32() == 256:
-            self.error("Not using full color table.")
+        self.colortable = self.read32() or 2**self.colordepth
         self.file.seek(0x36)
         
         if self.colordepth == 8:
             self.colors = []
-            for i in range(256):
+            for i in range(self.colortable):
                 self.colors.append(tuple(self.file.read(4)[:3]))
 
     # pixel value: x,y coordinate
@@ -59,8 +58,8 @@ class Sheet:
             for i in range(y,y+height):
                 self.file.seek(self.offset + self.rowsize*i + x*3)
                 c = self.file.read(width*3)
-                out.append([(c[i],c[i+1],c[i+2]) for i in range(0,c,3)])
-        return out
+                out.append([(c[i],c[i+1],c[i+2]) for i in range(0,len(c),3)])
+        return out[::-1]
  
 class Cell:
     def __init__(self, sheet, index):
@@ -74,8 +73,59 @@ class Cell:
     def read(self):
         return self.sheet.getrect(self.position[0], self.position[1], 46, 55)
 
+class Bitmap:
+    def __init__(self, data):
+        self.width = len(data[0])
+        self.height = len(data)
+        self.data = data
+
+    def write(self, io, scale):
+        rowsize = (24*scale*self.width+31)//32 * 4
+        datasize = rowsize*self.height
+        io.write(b'BM')
+        io.write(lint32a(datasize+54))
+        io.write(bytes([0]*4))
+        io.write(lint32a(54))
+        io.write(lint32a(40))
+        io.write(lint32a(self.width))
+        io.write(lint32a(self.height))
+        io.write(lint16a(1))
+        io.write(lint16a(24))
+        io.write(lint32a(0))
+        io.write(lint32a(datasize))
+        io.write(lint32a(2850))
+        io.write(lint32a(2850))
+        io.write(lint32a(0))
+        io.write(lint32a(0))
+        pad = bytes([0]*(rowsize - 3*self.width*scale))
+    
+        for row in self.data[::-1]:
+            for i in range(scale):
+                for cell in row:
+                    io.write(bytes(cell))
+                io.write(pad)
+        io.close()
+
 
 #x = avg(Cell(Sheet(sys.argv[1]), 3).read())
 #print(hex((x[0]<<16)+(x[1]<<8)+x[2]))
 
 #print("\n".join("".join(("0"+hex(c)[2:])[-2:] for c in line) for line in Cell(Sheet(sys.argv[1]), 3).read()))
+
+def lozenge():
+    width = 23
+    for y in range(0,16):
+        for x in range(width):
+            yield (x,y)
+            yield (x,-1-y)
+            yield (-1-x,y)
+            yield (-1-x,-1-y)
+        width -= 1 + (y % 2)
+        
+def flooravg(image):
+    R,G,B = 0,0,0
+    for x,y in lozenge():
+        x,y = x+23,y+16
+        r,g,b = image[y][x]
+        R,G,B = R+r,G+g,B+b          
+    return R//768, G//768, B//768
