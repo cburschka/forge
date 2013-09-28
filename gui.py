@@ -3,7 +3,7 @@ import os
 from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import GdkX11
-import map
+import maps
 
 def create_menu_tree(title, sub):
     menu = Gtk.Menu()
@@ -103,7 +103,7 @@ class GameWindow(Gtk.Window):
             print("File opened: " + self.open_file)
             
         dialog.destroy()
-        self.map = map.map_create(self.open_file)
+        self.map = maps.map_create(self.open_file)
         self.center_view()
         self.draw()
         

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
 
-import map, sys
+import maps, sys
 
-map.map_view(map.map_create(sys.argv[1]))
+maps.map_view(maps.map_create(sys.argv[1]))
