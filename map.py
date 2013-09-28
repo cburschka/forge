@@ -4,7 +4,9 @@ import pygame
 
 def isomap(data, scenario):
     iso_size = sum(scenario.outdoor_size)*48
-    bitmap = pygame.Surface((iso_size*23+23, iso_size*16+39+9*23))
+    map_size = (iso_size*23+23, iso_size*16+39+9*23)
+    print(map_size)
+    bitmap = pygame.Surface(map_size)
     cx, cy = 48*scenario.outdoor_size[1]-1,0 # 23x16 slot for the NW corner of the map.
 
     # For all sections.
@@ -28,11 +30,31 @@ def isomap(data, scenario):
                     if floor_img:
                         bitmap.blit(floor_img, (fpx,fpy), data.find_icon(fl_data['which_sheet'], fl_data['which_icon']))
 
-                    if te_cell:
+                    if te_cell and te_cell in data['terrain']:
                         te_data = data['terrain'][te_cell]
-                        # AUGH.
+                        # AUGH
                         if 2 <= te_cell <= 73:
+                            # wall graphic variant is specified in the sector data.
                             te_data['which_sheet'] = [614,616][on_surface]
+                            
+                        # AAAAAUGH
+                        if 2 <= te_cell <= 9 or 42 <= te_cell <= 45:
+                            # corner walls are entirely drawn by code.
+                            tpx,tpy = fpx,fpy
+                            if te_cell in (2, 42):
+                                sheet, icon = te_data['which_sheet'], 0
+                                tpy -= 10
+                            elif te_cell in (3, 43):
+                                sheet, icon = te_data['which_sheet'], 0
+                                bitmap.blit(terrain_img, (tpx-19, tpy-32), data.find_icon(sheet, 1))
+                            elif te_cell in (4, 44):
+                                sheet, icon = te_data['which_sheet'], 0
+                            else:
+                                sheet, icon = te_data['which_sheet'], 0
+                                
+                            terrain_img = data.load_sheet(sheet)                                
+                            bitmap.blit(terrain_img, (tpx, tpy), data.find_icon(sheet, icon))
+                            continue
 
                         terrain_img = data.load_sheet(te_data['which_sheet'])
                         tpx,tpy = fpx+te_data['icon_offset_x'],fpy+te_data['icon_offset_y']
