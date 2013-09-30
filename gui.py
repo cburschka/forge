@@ -1,9 +1,12 @@
+import time
 import pygame
 import os
 from gi.repository import GObject
 from gi.repository import Gtk
-from gi.repository import GdkX11
+from gi.repository import Gdk
 import maps
+
+WINDOW_SIZE = (1024,768)
 
 def create_menu_tree(title, sub):
     menu = Gtk.Menu()
@@ -52,30 +55,38 @@ class GameWindow(Gtk.Window):
 
         #create the drawing area
         da = Gtk.DrawingArea()
-        da.set_size_request(800, 600)
+        da.set_size_request(WINDOW_SIZE[0], WINDOW_SIZE[1])
         da.show()
         vbox.pack_end(da, False, False, 0)
-        da.connect("realize",self._realized)
-        self.map = pygame.Surface((1,1)) # empty map
-        self.viewport = [0,0,800,600]
+        da.connect('realize', self._realized)
+        self.redraw = False
+        self.map = None # empty map
+        self.viewport = [0,0]
 
-        #collect key press events
-        self.connect("key-press-event", self.key_pressed)
+        #connect the events
+        self.connect('key-press-event', self.key_pressed)
+        self.drag = False
 
     def key_pressed(self, widget, event, data=None):
-        redraw = True
-        if event.keyval == 65361: # <
-            self.viewport[0] -= 5
-        elif event.keyval == 65362: # ^
-            self.viewport[1] -= 5 
-        elif event.keyval == 65363: # >
-            self.viewport[0] += 5
-        elif event.keyval == 65364: # v
-            self.viewport[1] += 5
-        else:
-            redraw = False
-        if redraw:
-            self.draw()
+        print("Key")
+        if event.keyval & 0xfffc == 0xff50:
+            d = event.keyval & 0x1
+            s = event.keyval & 0x2
+            self.move_view(d*(s - 1), (d^1)*(s - 1))
+
+#    def event_click(self, widget, event):
+#        self.drag =  (event.x,event.y)
+#        print("Drag")
+
+#    def release(self, widget, event):
+#        self.drag =  False
+
+#    def mousemove(self,widget,event):
+#        print(self.drag)
+#        if self.drag:
+#            self.move_view(event.x-self.drag[0], event.y - self.drag[1])
+#            self.drag = (event.x, event.y)
+
 
     def show_about(self, widget, data=None):
 	      title = "Forge 0.0.0"
@@ -105,25 +116,47 @@ class GameWindow(Gtk.Window):
         dialog.destroy()
         self.map = maps.map_create(self.open_file)
         self.center_view()
-        self.draw()
+        self.redraw = True
         
     def center_view(self):
-        self.viewport[0:2] = [(self.map.get_width() - self.screen.get_width())//2, (self.map.get_height() - self.screen.get_height())//2]
+        self.viewport = [(self.map.get_width() - self.screen.get_width())//2, (self.map.get_height() - self.screen.get_height())//2]
 
     def quit(self, widget, data=None):
         self.destroy()
 
-    def draw(self):
-        self.screen.blit(self.map, (0,0), self.viewport)
+    def game_loop(self):
+        if self.redraw:
+            self.map_draw()
+            self.redraw = False
+        self.screen.blit(self.map_view, (0,0))
         pygame.display.flip()
+        for event in pygame.event.get():
+            print(event)
+            if event.type == pygame.QUIT: sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.drag = True
+            elif self.drag and event.type == pygame.MOUSEMOTION:
+                self.move_view(event.rel[0], event.rel[-1])
+                self.redraw = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.drag = False
         return True
 
+    def map_draw(self):
+        if self.map:
+            self.map_view.fill((0,0,0))
+            self.map.blit_to(self.map_view, self.viewport)
+
+
     def _realized(self, widget, data=None):
+        print("Realizing")
         os.putenv('SDL_WINDOWID', str(widget.get_window().get_xid()))        
         pygame.init()
-        pygame.display.set_mode((800, 600), 0, 0)
+        pygame.display.set_mode(WINDOW_SIZE, 0, 0)
         self.screen = pygame.display.get_surface()
-        GObject.timeout_add(200, self.draw)
+        self.map_view = pygame.Surface(WINDOW_SIZE)
+        #This is a horrible workaround, and makes it run like molasses.
+        GObject.timeout_add(80, self.game_loop)
 
 if __name__ == "__main__":
     window = GameWindow()
