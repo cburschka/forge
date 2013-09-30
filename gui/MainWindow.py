@@ -32,7 +32,7 @@ class MainWindow(Gtk.Window):
             ('_File', [
                 ('New', self.missing),
                 ('Open', self.open_scenario),
-                ('Close', self.missing),
+                ('Close', self.close_scenario),
                 ('Quit', Gtk.main_quit)
             ]),
             ('_Help', [
@@ -73,7 +73,13 @@ class MainWindow(Gtk.Window):
             self.center_view()
             self.map_view.fill(0x808080ff)
             self.map.blit_to(self.map_view, self.viewport)
+            self.map_area.queue_draw()
             
+    def close_scenario(self, widget, data=None):
+        self.map = None
+        self.map_view.fill(0x808080ff)
+        self.map_area.queue_draw()
+
     def missing(self, widget):
         print('Not implemented')
         return True
