@@ -1,14 +1,17 @@
+from gi.repository import Gtk, GdkPixbuf
+
 import resource
 import bas
-import pygame
 
 def isomap_empty(size):
     iso_size = (size[0] + size[1])
     map_size = (iso_size*23+23, iso_size*16+39+9*23)
-    m = pygame.Surface(map_size)
-    m.fill((255,255,255))
-    m.set_colorkey((255,255,255))
+    m = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, map_size[0],map_size[1])
+    #m.add_alpha(True, 255, 255, 255)
     return m
+
+def sprite(source, destination, rect, position):
+    source.composite(destination, position[0], position[1], rect[2], rect[3], position[0]-rect[0], position[1]-rect[1], 1, 1, GdkPixbuf.InterpType.NEAREST, 255)
 
 def isomap_outdoor(section, data):
     bitmap = isomap_empty((48,48))
@@ -28,7 +31,10 @@ def isomap_outdoor(section, data):
             floor_img = data.load_sheet(fl_data['which_sheet'])
             fpx,fpy = 23*px,16*py-(y_cell-9)*23
             if floor_img:
-                bitmap.blit(floor_img, (fpx,fpy), data.find_icon(fl_data['which_sheet'], fl_data['which_icon']))
+                #floor_img.savev("testcell.png", "png", [], [])
+                #return
+                sprite(floor_img, bitmap, data.find_icon(fl_data['which_sheet'], fl_data['which_icon']), (fpx, fpy))
+                #bitmap.blit(floor_img, (fpx,fpy), )
 
             if te_cell and te_cell in data['terrain']:
                 te_data = data['terrain'][te_cell]
@@ -45,12 +51,13 @@ def isomap_outdoor(section, data):
                     pass
 
                 if terrain_img:
-                    bitmap.blit(terrain_img, (tpx, tpy), data.find_icon(te_data['which_sheet'], te_data['which_icon']))
+                    sprite(terrain_img, bitmap, data.find_icon(te_data['which_sheet'], te_data['which_icon']), (tpx, tpy))
 
-                if 'second_icon' in te_data:
-                    ttpx,ttpy = fpx+te_data['second_icon_offset_x'],fpy+te_data['second_icon_offset_y']
-                    if terrain_img:
-                        bitmap.blit(terrain_img, (ttpx, ttpy), data.find_icon(te_data['which_sheet'], te_data['second_icon']))
+#                    bitmap.blit(terrain_img, (tpx, tpy), data.find_icon(te_data['which_sheet'], te_data['which_icon']))
+
+                    if 'second_icon' in te_data:
+                        ttpx,ttpy = fpx+te_data['second_icon_offset_x'],fpy+te_data['second_icon_offset_y']
+                        sprite(terrain_img, bitmap, data.find_icon(te_data['which_sheet'], te_data['second_icon']), (ttpx, ttpy))
     return bitmap
 
 class OutdoorMap:
@@ -69,10 +76,32 @@ class OutdoorMap:
     def blit_to(self, target, view):
         for i,row in enumerate(self.maps):
             for j,sector in enumerate(row):
+                #sector.savev("testsector.png", "png", [], [])
+                #return
                 x,y = (self.size[1]-1+j-i), (j+i)
                 px,py = x*48*23-view[0], y*48*16-view[1]
                 #print("Drawing {0} on {1} {2}".format((i,j),(x,y),(px,py)))
-                target.blit(sector, (px,py))
+                src_x, src_y = 0,0
+                src_w,src_h = sector.get_width(), sector.get_height()
+                
+                # Slice left
+                if px < 0:
+                    px, src_x, src_w = 0, -px, src_w + px
+                # Slice right
+                if px + src_w > target.get_width():
+                    src_w = target.get_width() - px
+                if py < 0:
+                    py, src_y, src_h = 0, -py, src_h + py
+                if py + src_h > target.get_height():
+                    src_h = target.get_height() - py
+                
+                if src_w <= 0 or src_h <= 0:
+                    continue # picture is out of frame
+                else:
+                    pass
+                    #print("Drawing rect {0} from {1} to {2}".format((src_x, src_y, src_w, src_h), (j,i),(px,py)))
+                sprite(sector, target, (src_x, src_y, src_w, src_h), (px, py))
+                #target.blit(sector, (px,py))
 
     def get_width(self):
         return self.virtual_size[0]

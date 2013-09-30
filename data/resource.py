@@ -1,7 +1,6 @@
 import avernumscript
-import os
-import re
-import pygame
+import os, re
+from gi.repository.GdkPixbuf import Pixbuf
 
 CNF_FILE = os.environ['HOME'] + '/.forge/forge.ini'
 DATA_DIR = open(CNF_FILE).read()[6:] + '/Data'
@@ -35,8 +34,7 @@ class ScenarioData:
     def load_sheet(self, n):
         if n in self.sheet_path:
             if n not in self.sheets:
-                self.sheets[n] = pygame.image.load(self.sheet_path[n])
-                self.sheets[n].set_colorkey((255, 255, 255)) # white is transparent
+                self.sheets[n] = Pixbuf.new_from_file(self.sheet_path[n]).add_alpha(True, 255, 255, 255)
             return self.sheets[n]
 
         
