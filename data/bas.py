@@ -1,4 +1,4 @@
-from binmagic import bint16, str0
+from data.binmagic import bint16, str0
 
 SIZE_GLOBAL = 0x1d38
 SIZE_OUTDOOR = 0x325c

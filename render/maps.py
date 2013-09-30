@@ -1,7 +1,7 @@
 from gi.repository import Gtk, GdkPixbuf
 
-import resource
-import bas
+import data.resource as resource
+import data.bas as bas
 
 def isomap_empty(size):
     iso_size = (size[0] + size[1])

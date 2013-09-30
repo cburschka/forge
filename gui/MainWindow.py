@@ -1,9 +1,9 @@
 from gi.repository import Gtk, Gdk, GdkPixbuf
-import gui.dialogs
-import maps
+import gui.dialogs as dialogs
+import render.maps as maps
 import cairo
 
-SPEED = 10
+SPEED = 20
 
 class MenuBar(Gtk.MenuBar):
     def __init__(self, tree):
@@ -91,7 +91,7 @@ class MainWindow(Gtk.Window):
     def map_key_pressed(self, widget, event, data=None):
         #print("KEY")
         if (event.keyval-1) & 0xfffc == 0xff50:
-            print(0x3 & event.keyval)
+            #print(0x3 & event.keyval)
             d = event.keyval & 0x1
             s = event.keyval & 0x2
             self.move_view(d*(1-s)*SPEED, (d^1)*(s-1)*SPEED)

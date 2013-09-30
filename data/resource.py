@@ -1,4 +1,4 @@
-import avernumscript
+import data.avernumscript as avernumscript
 import os, re
 from gi.repository.GdkPixbuf import Pixbuf
 
