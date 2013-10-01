@@ -5,9 +5,8 @@ import data.bas as bas
 
 def isomap_empty(size):
     iso_size = (size[0] + size[1])
-    map_size = (iso_size*23+23, iso_size*16+39+9*23)
+    map_size = (iso_size*23+23, iso_size*16+39+20*23)
     m = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, map_size[0],map_size[1])
-    #m.add_alpha(True, 255, 255, 255)
     return m
 
 def sprite(source, destination, position, rect=None):
@@ -66,14 +65,13 @@ class OutdoorMap:
         print(scenario.outdoor_size)
         iso_size = sum(scenario.outdoor_size) * 48
         self.size = scenario.outdoor_size
-        self.virtual_size = (iso_size*23+23, iso_size*16+39+9*23)
+        self.virtual_size = (iso_size*23+23, iso_size*16+39+20*23)
         self.maps = [[None]*scenario.outdoor_size[0] for i in range(scenario.outdoor_size[1])]
         # For all sections.
         for i in range(scenario.outdoor_size[1]):
             for j in range(scenario.outdoor_size[0]):
                 self.maps[i][j] = isomap_outdoor(scenario.get_outdoor_section(j,i), data)
         
-    '''I'd override Surface, but its blit() method can only be overloaded on the receiving end.'''
     def blit_to(self, target, view):
         for i,row in enumerate(self.maps):
             for j,sector in enumerate(row):

@@ -33,6 +33,7 @@ class MainWindow(Gtk.Window):
             ('_File', [
                 ('New', self.missing),
                 ('Open', self.open_scenario),
+                ('Save', self.missing),
                 ('Export Map', self.export_map),
                 ('Close', self.close_scenario),
                 ('Quit', Gtk.main_quit)
