@@ -1,0 +1,22 @@
+Installing Forge
+================
+
+Requirements:
+	* Python 3 : http://www.python.org/
+	* GTK+ : http://www.gtk.org/ 
+	* PyGObject : https://wiki.gnome.org/PyGObject
+
+Run forge/setup.py. It will ask for a path to the BoA installation.
+Currently, only the Windows version of BoA is supported (no resource forks).
+
+
+Running the Map Viewer
+======================
+
+Usage:
+  forge/main.py
+
+In the interface, you will be able to open any *.bas file that is in its
+proper location; that is, in the same directory with the scenario data script
+and all the custom graphics.
+
