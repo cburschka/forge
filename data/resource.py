@@ -2,7 +2,8 @@ import data.avernumscript as avernumscript
 import os, re
 from gi.repository.GdkPixbuf import Pixbuf
 
-CNF_FILE = os.environ['HOME'] + '/.forge/forge.ini'
+HOME_DIR = os.getenv('HOME') or os.getenv('APPDATA')
+CNF_FILE = HOME_DIR + '/.forge/forge.ini'
 DATA_DIR = open(CNF_FILE).read()[6:] + '/Data'
 
 class ScenarioData:

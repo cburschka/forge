@@ -8,7 +8,7 @@ def try_import(module, msg):
         sys.exit(1)
 
 def setup():
-    cnfpath = os.environ['HOME'] + '/.forge'
+    cnfpath = (os.getenv('HOME') or os.getenv('APPDATA')) + '/.forge'
     if sys.version_info[0] != 3:
         print("Python 3 is required to run this program.")
     try_import('pygame', 'This software requires the pygame library to be installed.')
