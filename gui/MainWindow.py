@@ -3,7 +3,8 @@ import gui.dialogs as dialogs
 import render.maps as maps
 import cairo
 
-SPEED = 20
+'''The number of pixels to move the map for each key press.'''
+SCROLL_SPEED = 20
 
 class MenuBar(Gtk.MenuBar):
     def __init__(self, tree):
@@ -44,11 +45,9 @@ class MainWindow(Gtk.Window):
         self.add(vbox)
         vbox.pack_start(menu_bar, False, False, 0)
         
-        #self.test_view = GdkPixbuf.Pixbuf.new_from_file('/home/christoph/Documents/games/boa/scenarios/Valley of Dying Things/G501.bmp').add_alpha(True, 255, 255, 255)
         self.map = None
         self.map_view = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, 800,600)
         self.map_view.fill(0x808080ff)
-        #self.test_view.composite(self.map_view, 0, 0, 46, 55, -47*3-1, -1, 1, 1, GdkPixbuf.InterpType.NEAREST, 255)
         self.map_area = MapArea(self.map_view)
         self.map_area.set_size_request(800, 600)
         self.map_area.show()
@@ -72,7 +71,6 @@ class MainWindow(Gtk.Window):
     def open_scenario(self, widget, data=None):
         filename = dialogs.OpenScenarioDialog(self).run()
         if filename:
-            print("Opened {0}".format(filename))
             self.map = maps.map_create(filename)
             self.center_view()
             self.map_view.fill(0x808080ff)
@@ -99,24 +97,17 @@ class MainWindow(Gtk.Window):
         self.map_area.queue_draw()
 
     def map_key_pressed(self, widget, event, data=None):
-        print("KEY")
         if (event.keyval-1) & 0xfffc == 0xff50:
-            #print(0x3 & event.keyval)
             d = event.keyval & 0x1
             s = event.keyval & 0x2
             self.move_view(d*(1-s)*SPEED, (d^1)*(s-1)*SPEED)
         else:
             print(hex(event.keyval & 0xfffc))
     def map_click(self, widget, event):
-        #print("CLICK")
         self.drag =  (event.x,event.y)
     def map_release(self, widget, event):
-        #print("RELEASE")
         self.drag =  False
     def map_move(self,widget,event):
-        #print("MOVE")
-        #print(event)
-        #print(self.drag)
         if self.drag:
             self.move_view(event.x-self.drag[0], event.y - self.drag[1])
             self.drag = (event.x, event.y)
@@ -132,6 +123,5 @@ class MapArea(Gtk.DrawingArea):
         cr.set_operator(cairo.OPERATOR_SOURCE)
         cr.set_source_rgb(1,1,1)
         Gdk.cairo_set_source_pixbuf(context, self.pixbuf, 0, 0)
-        #cr.paint()
         context.paint()
 
