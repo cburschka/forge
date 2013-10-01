@@ -51,10 +51,6 @@ class MainWindow(Gtk.Window):
         self.map_area = MapArea(self.map_view)
         self.map_area.set_size_request(800, 600)
         self.map_area.show()
-        self.map_area.set_events(self.map_area.get_events()
-                      | Gdk.EventMask.BUTTON_RELEASE_MASK
-                      | Gdk.EventMask.BUTTON_PRESS_MASK
-                      | Gdk.EventMask.POINTER_MOTION_MASK)
         self.connect('key-press-event', self.map_key_pressed)
         self.map_area.connect('button-press-event', self.map_click)
         self.map_area.connect('button-release-event', self.map_release)
@@ -112,11 +108,17 @@ class MainWindow(Gtk.Window):
             self.move_view(event.x-self.drag[0], event.y - self.drag[1])
             self.drag = (event.x, event.y)
 
+
+
 class MapArea(Gtk.DrawingArea):
     def __init__(self, source):
         Gtk.DrawingArea.__init__(self)
         self.connect('draw', self._do_expose)
         self.pixbuf = source
+        self.set_events(self.get_events()
+                      | Gdk.EventMask.BUTTON_RELEASE_MASK
+                      | Gdk.EventMask.BUTTON_PRESS_MASK
+                      | Gdk.EventMask.POINTER_MOTION_MASK)
 
     def _do_expose(self, widget, context):
         cr = self.get_property('window').cairo_create()
