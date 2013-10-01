@@ -4,7 +4,7 @@ class AboutDialog(Gtk.Dialog):
     def __init__(self, window):
         Gtk.Dialog.__init__(self, 'Forge 0.0.0', window, Gtk.DialogFlags.MODAL,(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK))
         label = Gtk.Label("Forge is a product of the Ermarian Network, 2013.")
-        link = Gtk.LinkButton("http://github.com/cburschka/forge-python", "http://github.com/cburschka/forge-python")
+        link = Gtk.LinkButton("http://github.com/cburschka/forge", "http://github.com/cburschka/forge")
         content_area = self.get_content_area()
         content_area.add(label)
         content_area.add(link)
