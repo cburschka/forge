@@ -33,6 +33,7 @@ class MainWindow(Gtk.Window):
             ('_File', [
                 ('New', self.missing),
                 ('Open', self.open_scenario),
+                ('Export Map', self.export_map),
                 ('Close', self.close_scenario),
                 ('Quit', Gtk.main_quit)
             ]),
@@ -77,6 +78,11 @@ class MainWindow(Gtk.Window):
         self.map = None
         self.map_view.fill(0x808080ff)
         self.map_area.queue_draw()
+
+    def export_map(self, widget, data=None):
+        filename = dialogs.SaveMapDialog(self).run()
+        if filename:
+            self.map.save(filename)
 
     def missing(self, widget):
         print('Not implemented')

@@ -32,3 +32,21 @@ class OpenScenarioDialog(Gtk.FileChooserDialog):
             open_file = None
         self.destroy()
         return open_file
+
+class SaveMapDialog(Gtk.FileChooserDialog):
+    def __init__(self, window):
+        Gtk.FileChooserDialog.__init__(self, 'Save Map', action=Gtk.FileChooserAction.SAVE, buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        png_filter = Gtk.FileFilter()
+        png_filter.set_name("Portable Network Graphic - *.png")
+        png_filter.add_pattern("*.png")
+        self.add_filter(png_filter)
+
+    def run(self):
+        response = Gtk.FileChooserDialog.run(self)
+        if response == Gtk.ResponseType.OK:
+            filename = self.get_filename()
+        else:
+            filename = None
+        self.destroy()
+        return filename
+

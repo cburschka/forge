@@ -10,7 +10,8 @@ def isomap_empty(size):
     #m.add_alpha(True, 255, 255, 255)
     return m
 
-def sprite(source, destination, rect, position):
+def sprite(source, destination, position, rect=None):
+    rect = rect or (0, 0, source.get_width(), source.get_height())
     source.composite(destination, position[0], position[1], rect[2], rect[3], position[0]-rect[0], position[1]-rect[1], 1, 1, GdkPixbuf.InterpType.NEAREST, 255)
 
 def isomap_outdoor(section, data):
@@ -33,7 +34,7 @@ def isomap_outdoor(section, data):
             if floor_img:
                 #floor_img.savev("testcell.png", "png", [], [])
                 #return
-                sprite(floor_img, bitmap, data.find_icon(fl_data['which_sheet'], fl_data['which_icon']), (fpx, fpy))
+                sprite(floor_img, bitmap, (fpx, fpy), data.find_icon(fl_data['which_sheet'], fl_data['which_icon']))
                 #bitmap.blit(floor_img, (fpx,fpy), )
 
             if te_cell and te_cell in data['terrain']:
@@ -51,13 +52,13 @@ def isomap_outdoor(section, data):
                     pass
 
                 if terrain_img:
-                    sprite(terrain_img, bitmap, data.find_icon(te_data['which_sheet'], te_data['which_icon']), (tpx, tpy))
+                    sprite(terrain_img, bitmap, (tpx, tpy), data.find_icon(te_data['which_sheet'], te_data['which_icon']))
 
 #                    bitmap.blit(terrain_img, (tpx, tpy), data.find_icon(te_data['which_sheet'], te_data['which_icon']))
 
                     if 'second_icon' in te_data:
                         ttpx,ttpy = fpx+te_data['second_icon_offset_x'],fpy+te_data['second_icon_offset_y']
-                        sprite(terrain_img, bitmap, data.find_icon(te_data['which_sheet'], te_data['second_icon']), (ttpx, ttpy))
+                        sprite(terrain_img, bitmap, (ttpx, ttpy), data.find_icon(te_data['which_sheet'], te_data['second_icon']))
     return bitmap
 
 class OutdoorMap:
@@ -100,14 +101,21 @@ class OutdoorMap:
                 else:
                     pass
                     #print("Drawing rect {0} from {1} to {2}".format((src_x, src_y, src_w, src_h), (j,i),(px,py)))
-                sprite(sector, target, (src_x, src_y, src_w, src_h), (px, py))
+                sprite(sector, target, (px, py), (src_x, src_y, src_w, src_h))
                 #target.blit(sector, (px,py))
 
     def get_width(self):
         return self.virtual_size[0]
     def get_height(self):
         return self.virtual_size[1]
-
+    def save(self, filename):
+        large = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, self.get_width(), self.get_height())
+        for i,row in enumerate(self.maps):
+            for j,sector in enumerate(row):
+                x,y = (self.size[1]-1+j-i), (j+i)
+                px,py = x*48*23, y*48*16
+                sprite(sector, large, (px, py))
+        large.savev(filename, "png", [], [])
 
 def map_create(scenario_filename):
     data = resource.ScenarioData(scenario_filename)
