@@ -45,17 +45,21 @@ class MainWindow(Gtk.Window):
         vbox.pack_start(menu_bar, False, False, 0)
         
         #self.test_view = GdkPixbuf.Pixbuf.new_from_file('/home/christoph/Documents/games/boa/scenarios/Valley of Dying Things/G501.bmp').add_alpha(True, 255, 255, 255)
+        self.map = None
         self.map_view = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, 800,600)
         self.map_view.fill(0x808080ff)
         #self.test_view.composite(self.map_view, 0, 0, 46, 55, -47*3-1, -1, 1, 1, GdkPixbuf.InterpType.NEAREST, 255)
         self.map_area = MapArea(self.map_view)
         self.map_area.set_size_request(800, 600)
         self.map_area.show()
-        
+        self.map_area.set_events(self.map_area.get_events()
+                      | Gdk.EventMask.BUTTON_RELEASE_MASK
+                      | Gdk.EventMask.BUTTON_PRESS_MASK
+                      | Gdk.EventMask.POINTER_MOTION_MASK)
         self.connect('key-press-event', self.map_key_pressed)
-        self.connect('button-press-event', self.map_click)
-        self.connect('button-release-event', self.map_release)
-        self.connect('motion-notify-event', self.map_move)
+        self.map_area.connect('button-press-event', self.map_click)
+        self.map_area.connect('button-release-event', self.map_release)
+        self.map_area.connect('motion-notify-event', self.map_move)
         self.drag = None
 
         
@@ -95,7 +99,7 @@ class MainWindow(Gtk.Window):
         self.map_area.queue_draw()
 
     def map_key_pressed(self, widget, event, data=None):
-        #print("KEY")
+        print("KEY")
         if (event.keyval-1) & 0xfffc == 0xff50:
             #print(0x3 & event.keyval)
             d = event.keyval & 0x1
