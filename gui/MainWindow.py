@@ -71,13 +71,19 @@ class MainWindow(Gtk.Window):
         if filename:
             self.map = maps.map_create(filename)
             self.center_view()
-            self.map_view.fill(0x808080ff)
-            self.map.blit_to(self.map_view, self.viewport)
-            self.map_area.queue_draw()
+            self.redraw_map()
             
     def close_scenario(self, widget, data=None):
         self.map = None
+        self.clear_map()
+
+    def clear_map(self):
         self.map_view.fill(0x808080ff)
+        self.map_area.queue_draw()        
+
+    def redraw_map(self):
+        self.map_view.fill(0x808080ff)
+        self.map.blit_to(self.map_view, self.viewport, 0.5)
         self.map_area.queue_draw()
 
     def export_map(self, widget, data=None):
@@ -96,8 +102,7 @@ class MainWindow(Gtk.Window):
         self.viewport[0] -= dx
         self.viewport[1] -= dy
         self.map_view.fill(0x808080ff)
-        self.map.blit_to(self.map_view, self.viewport)
-        self.map_area.queue_draw()
+        self.redraw_map()
 
     def map_key_pressed(self, widget, event, data=None):
         if (event.keyval-1) & 0xfffc == 0xff50:
