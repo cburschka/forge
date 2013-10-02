@@ -61,10 +61,10 @@ class MainWindow(Gtk.Window):
 
         
         vbox.pack_end(self.map_area, False, False, 0)
-        self.viewport = [0,0]
-        
+        self.center_view()
+
     def center_view(self):
-        self.viewport = [(self.map.get_width() - self.map_view.get_width())//2, (self.map.get_height() - self.map_view.get_height())//2]
+        self.view = [0,0]
 
     def open_scenario(self, widget, data=None):
         filename = dialogs.OpenScenarioDialog(self).run()
@@ -99,8 +99,8 @@ class MainWindow(Gtk.Window):
     def move_view(self, dx, dy):
         if not self.map:
             return
-        self.viewport[0] -= dx
-        self.viewport[1] -= dy
+        self.view[0] -= dx
+        self.view[1] -= dy
         self.map_view.fill(0x808080ff)
         self.redraw_map()
 
