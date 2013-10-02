@@ -37,4 +37,8 @@ Run this Python script:
 You will be able to open any *.bas file that is in its proper location; that is, 
 in the same directory with the scenario data script and all the custom graphics.
 
+Navigation
+----------
+
 The map can be scrolled with the arrow keys as well as by dragging the mouse.
+The scroll wheel can be used to zoom. 
