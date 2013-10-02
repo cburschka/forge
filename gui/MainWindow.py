@@ -62,6 +62,7 @@ class MainWindow(Gtk.Window):
         
         vbox.pack_end(self.map_area, False, False, 0)
         self.center_view()
+        self.zoom = 0.05
 
     def center_view(self):
         self.view = [0,0]
@@ -70,6 +71,7 @@ class MainWindow(Gtk.Window):
         filename = dialogs.OpenScenarioDialog(self).run()
         if filename:
             self.map = maps.map_create(filename)
+            self.rescale_map()
             self.center_view()
             self.redraw_map()
             
@@ -83,13 +85,16 @@ class MainWindow(Gtk.Window):
 
     def redraw_map(self):
         self.map_view.fill(0x808080ff)
-        self.map.blit_to(self.map_view, self.viewport, 0.5)
+        self.scaled_map.blit_to(self.map_view, self.view)
         self.map_area.queue_draw()
+        
+    def rescale_map(self):
+        self.scaled_map = self.map.rescale(self.zoom)
 
     def export_map(self, widget, data=None):
         filename = dialogs.SaveMapDialog(self).run()
         if filename:
-            self.map.save(filename)
+            self.scaled_map.save(filename)
 
     def missing(self, widget):
         print('Not implemented')
@@ -97,7 +102,7 @@ class MainWindow(Gtk.Window):
 
     # dx, dy: The direction the map should move
     def move_view(self, dx, dy):
-        if not self.map:
+        if not self.scaled_map:
             return
         self.view[0] -= dx
         self.view[1] -= dy
@@ -109,16 +114,21 @@ class MainWindow(Gtk.Window):
             d = event.keyval & 0x1
             s = event.keyval & 0x2
             self.move_view(d*(1-s)*SPEED, (d^1)*(s-1)*SPEED)
+            return True
         else:
-            print(hex(event.keyval & 0xfffc))
+            #print(hex(event.keyval & 0xfffc))
+            return False
     def map_click(self, widget, event):
         self.drag =  (event.x,event.y)
+        return True
     def map_release(self, widget, event):
         self.drag =  False
+        return True
     def map_move(self,widget,event):
         if self.drag:
             self.move_view(event.x-self.drag[0], event.y - self.drag[1])
             self.drag = (event.x, event.y)
+        return True
 
 
 
