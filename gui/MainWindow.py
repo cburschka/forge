@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
 import gui.dialogs as dialogs
 import render.maps as maps
 import cairo
@@ -66,6 +66,9 @@ class MainWindow(Gtk.Window):
         self.scaled_map = None
         self.zoom = ZOOM.index(1)
         self.drag = None
+        self.refine = False
+        GLib.timeout_add_seconds(1, self.refine_map)
+
 
     def center_view(self):
         self.view = [0,0]
@@ -74,7 +77,7 @@ class MainWindow(Gtk.Window):
         filename = dialogs.OpenScenarioDialog(self).run()
         if filename:
             self.map = maps.map_create(filename)
-            self.rescale_map()
+            self.scaled_map = self.map if ZOOM[self.zoom] == 1 else self.map.rescale(ZOOM[self.zoom])
             self.center_view()
             self.redraw_view()
             
@@ -91,8 +94,19 @@ class MainWindow(Gtk.Window):
         self.scaled_map.blit_to(self.map_view, self.view)
         self.map_area.queue_draw()
         
-    def rescale_map(self):
-        self.scaled_map = self.map.rescale(ZOOM[self.zoom])
+    def refine_map(self):
+        if self.refine:
+            self.scaled_map = self.map.rescale(ZOOM[self.zoom])
+            self.refine = False
+            self.redraw_view()
+        return True
+
+    def rescale_map(self, d=0):
+        # Scaled map is always smaller. This will produce a result faster.
+        self.scaled_map = self.scaled_map.rescale(ZOOM[self.zoom+d]/ZOOM[self.zoom])
+        self.zoom += d
+        self.refine = True
+        self.redraw_view()
 
     def export_map(self, widget, data=None):
         filename = dialogs.SaveMapDialog(self).run()
@@ -114,9 +128,7 @@ class MainWindow(Gtk.Window):
 
     def rezoom(self, d):
         if 0 <= self.zoom + d < len(ZOOM):
-            self.zoom += d
-            self.rescale_map()
-            self.redraw_view()
+            self.rescale_map(d)
 
     def event_key_pressed(self, widget, event, data=None):
         if (event.keyval-1) & 0xfffc == 0xff50:
