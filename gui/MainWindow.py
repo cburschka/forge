@@ -102,9 +102,12 @@ class MainWindow(Gtk.Window):
         return True
 
     def rescale_map(self, d=0):
-        # Scaled map is always smaller. This will produce a result faster.
-        self.scaled_map = self.scaled_map.rescale(ZOOM[self.zoom+d]/ZOOM[self.zoom])
+        # Scaled map is always smaller. This will produce a rough result faster.
+        rel = ZOOM[self.zoom+d]/ZOOM[self.zoom]
+        canvas_half = (self.map_view.get_width()/2, self.map_view.get_height()/2)
+        self.scaled_map = self.scaled_map.fast_rescale(rel, canvas_half, self.view)
         self.zoom += d
+        self.view = [self.view[0] * rel, self.view[1] * rel]
         self.refine = True
         self.redraw_view()
 
