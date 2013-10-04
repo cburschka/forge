@@ -46,9 +46,10 @@ class MainWindow(Gtk.Window):
 
         vbox = Gtk.VBox(False, 2)
         self.add(vbox)
+        self.vbox = vbox
         vbox.pack_start(menu_bar, False, False, 0)
-        
-        self.map_view = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, 800,600)
+        self.view_size = [800, 600]
+        self.map_view = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, self.view_size[0], self.view_size[1])
         self.map_view.fill(0x808080ff)
         self.map_area = MapArea(self.map_view)
         self.map_area.set_size_request(800, 600)
@@ -58,7 +59,7 @@ class MainWindow(Gtk.Window):
         self.map_area.connect('button-release-event', self.event_map_release)
         self.map_area.connect('motion-notify-event', self.event_map_move)
         self.map_area.connect('scroll-event', self.event_map_scroll)
-
+        self.connect('check-resize', self.event_resize)
         
         vbox.pack_end(self.map_area, False, False, 0)
         self.center_view()
@@ -67,6 +68,7 @@ class MainWindow(Gtk.Window):
         self.zoom = ZOOM.index(1)
         self.drag = None
         self.refine = False
+        self.allocation = None
         GLib.timeout_add_seconds(1, self.refine_map)
 
 
@@ -133,6 +135,18 @@ class MainWindow(Gtk.Window):
         if 0 <= self.zoom + d < len(ZOOM):
             self.rescale_map(d)
 
+    def resize(self, allocation):
+        if allocation.width != self.allocation.width or allocation.height != self.allocation.height:
+            margin = self.allocation.width - self.view_size[0], self.allocation.height - self.view_size[1]
+            self.view_size = allocation.width - margin[0], allocation.height - margin[1]
+            print(self.view_size)
+            self.map_view = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, self.view_size[0], self.view_size[1])
+            self.map_view.fill(0x808080ff)
+            self.map_area.pixbuf = self.map_view
+            self.allocation = allocation
+            self.redraw_view()
+
+
     def event_key_pressed(self, widget, event, data=None):
         if (event.keyval-1) & 0xfffc == 0xff50:
             d = event.keyval & 0x1
@@ -157,7 +171,12 @@ class MainWindow(Gtk.Window):
             self.rezoom(1)
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.rezoom(-1)
-
+    def event_resize(self, widget):
+        allocation = self.vbox.get_allocation()
+        if self.allocation:
+            self.resize(allocation)
+        else:
+            self.allocation = allocation
 
 class MapArea(Gtk.DrawingArea):
     def __init__(self, source):
